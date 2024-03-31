@@ -1,0 +1,167 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+// Function to print the Tic Tac Toe board
+void printBoard(const vector<vector<char>>& board) {
+    for (const auto& row : board) {
+        for (char cell : row) {
+            cout << cell << " ";
+        }
+        cout << endl;
+    }
+}
+
+// Function to check if there is a winner
+char checkWinner(const vector<vector<char>>& board) {
+    // Check rows and columns
+    for (int i = 0; i < 3; ++i) {
+        if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0] != ' ')
+            return board[i][0];
+        if (board[0][i] == board[1][i] && board[1][i] == board[2][i] && board[0][i] != ' ')
+            return board[0][i];
+    }
+
+    // Check diagonals
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2] && board[0][0] != ' ')
+        return board[0][0];
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0] && board[0][2] != ' ')
+        return board[0][2];
+
+    // Check for draw
+    for (const auto& row : board) {
+        for (char cell : row) {
+            if (cell == ' ')
+                return ' ';
+        }
+    }
+    return 'D'; // Draw
+}
+
+// Easy Computer Player
+void easyComputerMove(vector<vector<char>>& board, char currentPlayer) {
+    int row, col;
+    do {
+        row = rand() % 3;
+        col = rand() % 3;
+    } while (board[row][col] != ' ');
+    board[row][col] = currentPlayer;
+}
+
+// Medium Computer Player
+void mediumComputerMove(vector<vector<char>>& board, char currentPlayer) {
+    // Check for possible winning moves
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (board[i][j] == ' ') {
+                board[i][j] = currentPlayer;
+                if (checkWinner(board) == currentPlayer)
+                    return;
+                board[i][j] = ' ';
+            }
+        }
+    }
+    // Check for opponent's winning moves and block
+    char opponent = (currentPlayer == 'X') ? 'O' : 'X';
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (board[i][j] == ' ') {
+                board[i][j] = opponent;
+                if (checkWinner(board) == opponent) {
+                    board[i][j] = currentPlayer;
+                    return;
+                }
+                board[i][j] = ' ';
+            }
+        }
+    }
+    // If no winning or blocking moves, make a random move
+    easyComputerMove(board, currentPlayer);
+}
+
+// Hard Computer Player (Minimax Algorithm)
+int minimax(vector<vector<char>> board, char currentPlayer) {
+    char winner = checkWinner(board);
+    if (winner != ' ')
+        return (winner == 'X') ? 1 : (winner == 'O' ? -1 : 0);
+
+    int bestScore = (currentPlayer == 'X') ? -1000 : 1000;
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (board[i][j] == ' ') {
+                board[i][j] = currentPlayer;
+                int score = minimax(board, (currentPlayer == 'X') ? 'O' : 'X');
+                board[i][j] = ' ';
+                if (currentPlayer == 'X')
+                    bestScore = max(score, bestScore);
+                else
+                    bestScore = min(score, bestScore);
+            }
+        }
+    }
+    return bestScore;
+}
+
+void hardComputerMove(vector<vector<char>>& board, char currentPlayer) {
+    int bestScore = -1000;
+    pair<int, int> move;
+    move.first = -1;
+    move.second = -1;
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (board[i][j] == ' ') {
+                board[i][j] = currentPlayer;
+                int score = minimax(board, (currentPlayer == 'X') ? 'O' : 'X');
+                board[i][j] = ' ';
+                if (score > bestScore) {
+                    bestScore = score;
+                    move.first = i;
+                    move.second = j;
+                }
+            }
+        }
+    }
+    board[move.first][move.second] = currentPlayer;
+}
+
+int main() {
+    srand(time(0)); // Seed for random number generator
+    vector<vector<char>> board(3, vector<char>(3, ' '));
+    int row, col;
+    char currentPlayer = 'X';
+    char winner = ' ';
+
+    cout << "Welcome to Tic Tac Toe!\n";
+
+    // Game loop
+    while (winner == ' ') {
+        cout << "Current board:\n";
+        printBoard(board);
+        if (currentPlayer == 'X') {
+            cout << "Player " << currentPlayer << ", enter your move (row and column): ";
+            cin >> row >> col;
+            if (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != ' ') {
+                cout << "Invalid move! Try again.\n";
+                continue;
+            }
+            board[row][col] = currentPlayer;
+        } else {
+            // Computer's turn
+            // Uncomment one of the following lines to choose the difficulty level:
+            // easyComputerMove(board, currentPlayer);
+            // mediumComputerMove(board, currentPlayer);
+            hardComputerMove(board, currentPlayer);
+        }
+
+        // Check for winner
+        winner = checkWinner(board);
+
+        // Switch player
+        currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+    }
